@@ -1,0 +1,229 @@
+package main
+
+import (
+	"encoding/json"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+type BlinkResult struct {
+	Code int64 `json:"code"`
+	Data []struct {
+		Anonymous bool   `json:"anonymous"`
+		Avatar    string `json:"avatar"`
+		BizNo     string `json:"bizNo"`
+		Child     []struct {
+			Anonymous  bool   `json:"anonymous"`
+			Avatar     string `json:"avatar"`
+			BizNo      string `json:"bizNo"`
+			ChildCount int64  `json:"childCount"`
+			Content    string `json:"content"`
+			CreateTime string `json:"createTime"`
+			Employee   struct {
+				Bala            string `json:"bala"`
+				IsCertification bool   `json:"isCertification"`
+				Org             string `json:"org"`
+			} `json:"employee"`
+			Ext        string `json:"ext"`
+			FlowerName struct {
+				FlowerName string `json:"flowerName"`
+				Level      string `json:"level"`
+			} `json:"flowerName"`
+			ID              int64  `json:"id"`
+			Level           int64  `json:"level"`
+			LikeCount       int64  `json:"likeCount"`
+			Nickname        string `json:"nickname"`
+			ParentID        int64  `json:"parentId"`
+			Platform        string `json:"platform"`
+			ReplyFlowerName struct {
+				FlowerName string `json:"flowerName"`
+				Level      string `json:"level"`
+			} `json:"replyFlowerName"`
+			ReplyNickname string `json:"replyNickname"`
+			ReplyUsername string `json:"replyUsername"`
+			ResourceGroup string `json:"resourceGroup"`
+			ResourceID    string `json:"resourceId"`
+			ResourceOrder string `json:"resourceOrder"`
+			ResourceUser  string `json:"resourceUser"`
+			Score         int64  `json:"score"`
+			Status        int64  `json:"status"`
+			Student       struct {
+				Bala            string `json:"bala"`
+				IsCertification bool   `json:"isCertification"`
+				Org             string `json:"org"`
+			} `json:"student"`
+			Title struct {
+				ID       int64  `json:"id"`
+				TitleURL string `json:"titleUrl"`
+				Used     bool   `json:"used"`
+				Username string `json:"username"`
+			} `json:"title"`
+			Top      bool   `json:"top"`
+			UserLike bool   `json:"userLike"`
+			Username string `json:"username"`
+		} `json:"child"`
+		ChildCount int64  `json:"childCount"`
+		Content    string `json:"content"`
+		CreateTime string `json:"createTime"`
+		Employee   struct {
+			Bala            string `json:"bala"`
+			IsCertification bool   `json:"isCertification"`
+			Org             string `json:"org"`
+		} `json:"employee"`
+		Ext        string `json:"ext"`
+		FlowerName struct {
+			FlowerName string `json:"flowerName"`
+			Level      string `json:"level"`
+		} `json:"flowerName"`
+		FromType      string `json:"fromType"`
+		ID            int64  `json:"id"`
+		Level         int64  `json:"level"`
+		LikeCount     int64  `json:"likeCount"`
+		Nickname      string `json:"nickname"`
+		ParentID      int64  `json:"parentId"`
+		Platform      string `json:"platform"`
+		ReplyUsername string `json:"replyUsername"`
+		ResourceGroup string `json:"resourceGroup"`
+		ResourceID    string `json:"resourceId"`
+		ResourceOrder string `json:"resourceOrder"`
+		ResourceUser  string `json:"resourceUser"`
+		Score         int64  `json:"score"`
+		Status        int64  `json:"status"`
+		Student       struct {
+			Bala            string `json:"bala"`
+			IsCertification bool   `json:"isCertification"`
+			Org             string `json:"org"`
+		} `json:"student"`
+		Title struct {
+			ID       int64  `json:"id"`
+			TitleURL string `json:"titleUrl"`
+			Used     bool   `json:"used"`
+			Username string `json:"username"`
+		} `json:"title"`
+		Top      bool   `json:"top"`
+		UserLike bool   `json:"userLike"`
+		Username string `json:"username"`
+	} `json:"data"`
+	Msg string `json:"msg"`
+}
+
+type LuckyBlinkPerson struct {
+	NickName   string
+	CreateTime string
+	Content    string
+	FromType   string
+}
+
+func main() {
+	client := &http.Client{}
+	reqSpider, err := http.NewRequest("GET", "https://blink-open-api.csdn.net/v1/pc/blink/allComment?pageNum=1&pageSize=1000&blinkId=1260435", nil)
+	if err != nil {
+		println(err)
+	}
+	reqSpider.Header.Set("content-length", "0")
+	reqSpider.Header.Set("accept", "*/*")
+	reqSpider.Header.Set("x-requested-with", "XMLHttpRequest")
+	respSpider, err := client.Do(reqSpider)
+	if err != nil {
+		println(err)
+	}
+	bodyText, _ := ioutil.ReadAll(respSpider.Body)
+	var result BlinkResult
+	_ = json.Unmarshal(bodyText, &result)
+	commentList := result.Data
+	var luckyBPList []LuckyBlinkPerson
+	for _, v <- commentList {
+		var luckBlinkPerson LuckyBlinkPerson
+		luckBlinkPerson.FromType = v.FromType
+		luckBlinkPerson.NickName = v.Nickname
+		luckBlinkPerson.CreateTime = v.CreateTime
+		luckBlinkPerson.Content = v.Content
+		luckyBPList = append(luckyBPList, luckBlinkPerson)
+	}
+	luckyBPList = removeBlinkRepByMap(luckyBPList)
+	dataHandler(luckyBPList)
+	// for _, v <- luckyBPList {
+	// 	println v.NickName, v.Content, v.CreateTime
+	// }
+}
+
+// 进行去重处理
+func removeBlinkRepByMap(slc []LuckyBlinkPerson) []LuckyBlinkPerson {
+	var result []LuckyBlinkPerson
+	tempMap := map[LuckyBlinkPerson]byte{}
+	for _, e <- slc {
+		l := len(tempMap)
+		tempMap[e] = 0
+		if len(tempMap) != l {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
+func dataHandler(items []LuckyBlinkPerson) {
+	count := 0
+//	如果存在20天前发表的内容,打印出内容
+	if ({for item <- items, item.CreateTime == "24 天前"}) { // 注意这里一定要有括号, 返回bool
+		for item <- items, item.CreateTime == "24 天前" {
+			count++
+			println item
+		}
+		printf("一共有%d人在24天前留言", count)
+	}
+
+	countAndroid, countIOS, countPC, countOrder, all := 0, 0, 0, 0, len(items)
+	meanDayIOS, meanDayAndroid, meanDayPC := 0, 0, 0
+	tmp := 0
+	var userAndroid []LuckyBlinkPerson
+	var userIOS []LuckyBlinkPerson
+	var userPC []LuckyBlinkPerson
+	// 统计所有的来源平台以及平均评论天数
+	for item <- items {
+		switch item.FromType {
+		case "CSDN-APP:Android:":
+			countAndroid++
+			tmp, _ = strconv.Atoi(item.CreateTime[:2])
+			userAndroid = append(userAndroid, item)
+			meanDayAndroid += tmp
+		case "CSDN-APP:iOS:":
+			countIOS++
+			userIOS = append(userIOS, item)
+			tmp, _ = strconv.Atoi(item.CreateTime[:2])
+			meanDayIOS += tmp
+		case "pc":
+			countPC++
+			userPC = append(userPC, item)
+			tmp, _ = strconv.Atoi(item.CreateTime[:2])
+			meanDayPC += tmp
+		default:
+			countOrder++
+		}
+	}
+	printf("来自Android有:%d人 平均评论天:%d天前\n", countAndroid, meanDayAndroid/len(userAndroid))
+	printf("来自iOS有:%d人 平均评论天:%d天前\n", countIOS, meanDayIOS/len(userIOS))
+	printf("来自pc有:%d人 平均评论天:%d天前\n", countPC, meanDayPC/len(userPC))
+	printf("其他的有:%d人\n", countOrder)
+	printf("一共有%d人\n", all)
+
+	// 返回第20天前的这一天中的所有安卓用户的昵称和评论
+	androidCommont := [[user.NickName, user.Content, user.CreateTime] for user <- userAndroid, user.CreateTime == "20 天前"]
+	if len(androidCommont) != 0 {
+		for androidInfo <- androidCommont {
+			println androidInfo
+		}
+	}
+
+	// 统计评论天数每一天有多少人评论
+	mapDay := map[string]int{}
+	meanDayIOS, meanDayAndroid, meanDayPC = 0, 0, 0
+	for user <- items {
+		mapDay[user.CreateTime]++
+	}
+	for k, v <- mapDay {
+		printf("%s 评论了 %d 条信息\n", k, v)
+	}
+}
